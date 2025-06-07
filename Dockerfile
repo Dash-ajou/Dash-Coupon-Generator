@@ -7,7 +7,7 @@ ENV PYTHONUNBUFFERED=1
 
 # 3. 패키지 설치 (Tesseract 포함)
 RUN apt-get update && \
-    apt-get install -y tesseract-ocr libglib2.0-0 libsm6 libxrender1 libxext6 \
+    apt-get install -y tesseract-ocr libglib2.0-0 libsm6 libxrender1 libxext6 libgl1 \
     && rm -rf /var/lib/apt/lists/*
 
 # 4. 작업 디렉토리 생성
