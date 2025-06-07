@@ -3,7 +3,7 @@ name: Dash Coupon Generator BE Deployment Automizer
 on:
   push:
     branches:
-      - "master"
+      - "main"
 
 jobs:
   coupon-generate-server-build:
