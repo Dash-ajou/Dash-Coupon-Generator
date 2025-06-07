@@ -19,8 +19,8 @@ def load_data_by_request_id(request_id: int) -> DataBundle:
                 partner = Partner(partner_id=req_row['partner_id'], partner_name=req_row['partner_name'])
                 request = Request(request_id=req_row['request_id'], coupon_form=req_row['coupon_form'], partner=partner)
 
-                print(partner)
-                print(request)
+                print("ㄴ PARTNER: %s | %s"%(partner.partner_id, partner.partner_name))
+                print("ㄴ REQUEST: %s | %s"%(request.request_id, request.coupon_form))
 
                 # 2. Fetch issue
                 cursor.execute("SELECT issue_id FROM issue WHERE request_id = %s", (request_id,))
@@ -43,7 +43,7 @@ def load_data_by_request_id(request_id: int) -> DataBundle:
                     product_id_on_coupon = row['product_id']
                     product = product_map.get(product_id_on_coupon)
                     if not product:
-                        print(f"[WARNING] No product found for product_id: {row['product_id']}")
+                        print(f"ㄴ [WARNING] No product found for product_id: {row['product_id']}")
                         continue
                     coupons.append(
                         Coupon(
@@ -56,7 +56,7 @@ def load_data_by_request_id(request_id: int) -> DataBundle:
                 issue = Issue(issue_id=issue_id, coupons=coupons)
                 return DataBundle(request=request, issue=issue)
         except Exception as e:
-            print(f"[ERROR] Failed to load data for request_id={request_id}: {e}")
+            print(f"ㄴ [ERROR] Failed to load data for request_id={request_id}: {e}")
             raise
 
     finally:
