@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+opencv-python
+boto3
+qrcode
+pydantic
+python-dotenv
+pymysql
+pytesseract
