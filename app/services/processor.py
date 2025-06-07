@@ -85,16 +85,18 @@ def compose_to_pages(processed_images):
 
 # Helper: S3 업로드
 def upload_pages_to_s3(pages, request_id):
-    s3_keys = []
-    for i, canvas in enumerate(pages):
-        output_filename = f"{request_id}_sheet_{i + 1}.png"
-        local_path = os.path.join(TEMP_DIR, output_filename)
-        cv2.imwrite(local_path, canvas)
-        s3_key = f"result/{output_filename}"
-        with open(local_path, "rb") as f:
+    pdf_filename = f"{request_id}_result.pdf"
+    pdf_path = os.path.join(TEMP_DIR, pdf_filename)
+
+    pil_images = [Image.fromarray(cv2.cvtColor(p, cv2.COLOR_BGR2RGB)).convert("RGB") for p in pages]
+    if pil_images:
+        pil_images[0].save(pdf_path, save_all=True, append_images=pil_images[1:])
+
+        s3_key = f"result/{pdf_filename}"
+        with open(pdf_path, "rb") as f:
             s3.upload_fileobj(f, BUCKET_NAME, s3_key)
-        s3_keys.append(s3_key)
-    return s3_keys
+        return [s3_key]
+    return []
 
 # 처리로직
 def process_image(request_id: int) -> str:
