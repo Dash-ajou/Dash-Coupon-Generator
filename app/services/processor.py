@@ -84,13 +84,37 @@ def compose_to_pages(processed_images):
     return pages
 
 # Helper: S3 업로드
-def upload_pages_to_s3(pages, request_id):
+def upload_pages_to_s3(coupon_images, request_id):
     pdf_filename = f"{request_id}_result.pdf"
     pdf_path = os.path.join(TEMP_DIR, pdf_filename)
 
-    pil_images = [Image.fromarray(cv2.cvtColor(p, cv2.COLOR_BGR2RGB)).convert("RGB") for p in pages]
-    if pil_images:
-        pil_images[0].save(pdf_path, save_all=True, append_images=pil_images[1:])
+    # Load back template image from S3
+    back_template_key = "static/back_template.png"
+    try:
+        response = s3.get_object(Bucket=BUCKET_NAME, Key=back_template_key)
+        back_img_data = response["Body"].read()
+        back_img_cv = cv2.imdecode(np.frombuffer(back_img_data, np.uint8), cv2.IMREAD_COLOR)
+    except Exception as e:
+        print(f"[ERROR] Failed to load back template from S3: {e}")
+        raise
+
+    # Compose front pages
+    front_pages = compose_to_pages(coupon_images)
+
+    # Create matching number of back images
+    back_images = [back_img_cv] * len(coupon_images)
+
+    # Compose back pages
+    back_pages = compose_to_pages(back_images)
+
+    # Interleave front and back pages
+    pil_pages = []
+    for front, back in zip(front_pages, back_pages):
+        pil_pages.append(Image.fromarray(cv2.cvtColor(front, cv2.COLOR_BGR2RGB)).convert("RGB"))
+        pil_pages.append(Image.fromarray(cv2.cvtColor(back, cv2.COLOR_BGR2RGB)).convert("RGB"))
+
+    if pil_pages:
+        pil_pages[0].save(pdf_path, save_all=True, append_images=pil_pages[1:])
 
         s3_key = f"result/{pdf_filename}"
         with open(pdf_path, "rb") as f:
@@ -107,7 +131,7 @@ def process_image(request_id: int) -> str:
         template_img = load_template_image(base_key)
         processed_images = [process_coupon(template_img, c, data.request.partner.partner_name) for c in data.issue.coupons]
         pages = compose_to_pages(processed_images)
-        s3_keys = upload_pages_to_s3(pages, request_id)
+        s3_keys = upload_pages_to_s3(processed_images, request_id)
         print(f"ㄴ Uploaded {len(s3_keys)} A4 sheet image(s) to S3: {s3_keys}")
         return s3_keys
     except Exception as e:
