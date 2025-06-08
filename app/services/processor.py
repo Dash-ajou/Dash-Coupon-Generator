@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 import cv2
 import boto3
@@ -7,7 +8,7 @@ from PIL import Image
 from app.utils.image import detect_placeholder_region, detect_red_rectangle
 from app.utils.qrcode import generate_qr_image
 from app.models.schema import DataBundle
-from app.services.data_loader import load_data_by_request_id
+from app.services.data_loader import load_data_by_request_id, update_coupon_image_key
 from dotenv import load_dotenv
 import math
 from PIL import ImageFont, ImageDraw, Image
@@ -85,7 +86,7 @@ def compose_to_pages(processed_images):
 
 # Helper: S3 업로드
 def upload_pages_to_s3(coupon_images, request_id):
-    pdf_filename = f"{request_id}_result.pdf"
+    pdf_filename = f"{int(datetime.now().timestamp() * 1000)}_coupon_image.pdf"
     pdf_path = os.path.join(TEMP_DIR, pdf_filename)
 
     # Load back template image from S3
@@ -116,9 +117,10 @@ def upload_pages_to_s3(coupon_images, request_id):
     if pil_pages:
         pil_pages[0].save(pdf_path, save_all=True, append_images=pil_pages[1:])
 
-        s3_key = f"result/{pdf_filename}"
+        s3_key = f"image/{pdf_filename}"
         with open(pdf_path, "rb") as f:
             s3.upload_fileobj(f, BUCKET_NAME, s3_key)
+            update_coupon_image_key(request_id, s3_key)
         return [s3_key]
     return []
 

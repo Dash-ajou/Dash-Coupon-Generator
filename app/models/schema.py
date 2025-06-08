@@ -13,6 +13,7 @@ class Coupon(BaseModel):
 class Issue(BaseModel):
     issue_id: int
     coupons: List[Coupon]
+    coupon_image_key: Optional[str] = None
 
 class Partner(BaseModel):
     partner_id: int

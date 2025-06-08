@@ -16,6 +16,12 @@ def load_data_by_request_id(request_id: int) -> DataBundle:
                     WHERE r.request_id = %s
                 """, (request_id,))
                 req_row = cursor.fetchone()
+                if req_row is None:
+                    raise Exception(f"발행요청서를 찾을 수 없습니다: {request_id}")
+                
+                if req_row['coupon_form'] is None:
+                    raise Exception("양식이미지가 업로드되지 않았습니다")
+                
                 partner = Partner(partner_id=req_row['partner_id'], partner_name=req_row['partner_name'])
                 request = Request(request_id=req_row['request_id'], coupon_form=req_row['coupon_form'], partner=partner)
 
@@ -59,5 +65,24 @@ def load_data_by_request_id(request_id: int) -> DataBundle:
             print(f"ㄴ [ERROR] Failed to load data for request_id={request_id}: {e}")
             raise
 
+    finally:
+        conn.close()
+
+
+# Function to update coupon_image_key in issue table
+def update_coupon_image_key(request_id: int, s3_key: str):
+    try:
+        conn = pymysql.connect(**DB_CONFIG)
+        with conn.cursor() as cursor:
+            sql = """
+            UPDATE issue
+            SET coupon_image_key = %s
+            WHERE request_id = %s
+            """
+            cursor.execute(sql, (s3_key, request_id))
+            conn.commit()
+            print(f"ㄴ [INFO] Updated coupon_image_key for request_id={request_id} with {s3_key}")
+    except Exception as e:
+        print(f"ㄴ [ERROR] Failed to update coupon_image_key: {e}")
     finally:
         conn.close()
