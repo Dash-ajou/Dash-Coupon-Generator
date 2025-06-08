@@ -40,16 +40,25 @@ def load_template_image(base_key: str) -> np.ndarray:
 # Helper: 쿠폰이미지 합성
 def process_coupon(template_img, coupon, partner_name):
     img = template_img.copy()
+
     menu_box = detect_placeholder_region(img, "{{MENU_NAME}}")
     if menu_box:
         x, y, w, h = menu_box
         cv2.rectangle(img, (x, y), (x+w, y+h), (255, 255, 255), -1)
         img = draw_text_with_font(img, coupon.product.product_name, (x, y), font_size=32)
+
     partner_box = detect_placeholder_region(img, "{{PARTNER_NAME}}")
     if partner_box:
         x, y, w, h = partner_box
         cv2.rectangle(img, (x, y), (x+w, y+h), (255, 255, 255), -1)
         img = draw_text_with_font(img, partner_name, (x, y), font_size=32)
+
+    rc_box = detect_placeholder_region(img, "{{REGISTRATION_CODE}}")
+    if rc_box:
+        x, y, w, h = rc_box
+        cv2.rectangle(img, (x, y), (x+w, y+h), (255, 255, 255), -1)
+        img = draw_text_with_font(img, coupon.registration_code, (x, y), font_size=16)
+
     red_box = detect_red_rectangle(img)
     if red_box:
         x, y, w, h = red_box

@@ -20,7 +20,8 @@ def load_data_by_request_id(request_id: int) -> DataBundle:
                     raise Exception(f"발행요청서를 찾을 수 없습니다: {request_id}")
                 
                 if req_row['coupon_form'] is None:
-                    raise Exception("양식이미지가 업로드되지 않았습니다")
+                    # raise Exception("양식이미지가 업로드되지 않았습니다")
+                    req_row['coupon_form'] = "static/Front_Template.png"
                 
                 partner = Partner(partner_id=req_row['partner_id'], partner_name=req_row['partner_name'])
                 request = Request(request_id=req_row['request_id'], coupon_form=req_row['coupon_form'], partner=partner)
