@@ -120,6 +120,42 @@ def compose_to_backpages(processed_images):
         pages.append(canvas)
     return pages
 
+def compose_to_centered_pages(processed_images):
+    a4_width, a4_height = 2480, 3508
+    thumb_w, thumb_h = processed_images[0].shape[1], processed_images[0].shape[0]
+    cols = a4_width // thumb_w
+    rows_per_page = a4_height // thumb_h
+    images_per_page = cols * rows_per_page
+    total_pages = math.ceil(len(processed_images) / images_per_page)
+    pages = []
+
+    for page_num in range(total_pages):
+        canvas = np.ones((a4_height, a4_width, 3), dtype=np.uint8) * 255
+        for idx in range(images_per_page):
+            global_idx = page_num * images_per_page + idx
+            if global_idx >= len(processed_images):
+                break
+            img = processed_images[global_idx]
+            local_idx = idx
+            row = local_idx // cols
+            col = local_idx % cols
+
+            # 현재 행에서 실제로 출력될 이미지 수 계산
+            row_start_idx = page_num * images_per_page + row * cols
+            remaining_images = len(processed_images) - row_start_idx
+            row_images = min(cols, remaining_images)
+
+            # 가로 중앙 정렬을 위한 x offset 계산
+            total_row_width = row_images * thumb_w
+            x_offset = (a4_width - total_row_width) // 2
+            x = x_offset + col * thumb_w
+            y = row * thumb_h
+
+            canvas[y:y+thumb_h, x:x+thumb_w] = img
+            cv2.rectangle(canvas, (x, y), (x + thumb_w - 1, y + thumb_h - 1), (0, 0, 0), 2)
+        pages.append(canvas)
+    return pages
+
 # Helper: S3 업로드
 def upload_pages_to_s3(coupon_images, request_id):
     pdf_filename = f"{int(datetime.now().timestamp() * 1000)}_coupon_image.pdf"
@@ -136,13 +172,13 @@ def upload_pages_to_s3(coupon_images, request_id):
         raise
 
     # Compose front pages
-    front_pages = compose_to_pages(coupon_images)
+    front_pages = compose_to_centered_pages(coupon_images)
 
     # Create matching number of back images
     back_images = [back_img_cv] * len(coupon_images)
 
     # Compose back pages
-    back_pages = compose_to_backpages(back_images)
+    back_pages = compose_to_centered_pages(back_images)
 
     # Interleave front and back pages
     pil_pages = []
