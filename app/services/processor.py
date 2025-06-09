@@ -131,28 +131,32 @@ def compose_to_centered_pages(processed_images):
 
     for page_num in range(total_pages):
         canvas = np.ones((a4_height, a4_width, 3), dtype=np.uint8) * 255
-        for idx in range(images_per_page):
-            global_idx = page_num * images_per_page + idx
-            if global_idx >= len(processed_images):
-                break
-            img = processed_images[global_idx]
-            local_idx = idx
-            row = local_idx // cols
-            col = local_idx % cols
+        page_start_idx = page_num * images_per_page
+        page_end_idx = min(len(processed_images), page_start_idx + images_per_page)
+        page_images = processed_images[page_start_idx:page_end_idx]
+        total_images = len(page_images)
+        rows = math.ceil(total_images / cols)
 
-            # 현재 행에서 실제로 출력될 이미지 수 계산
-            row_start_idx = page_num * images_per_page + row * cols
-            remaining_images = len(processed_images) - row_start_idx
-            row_images = min(cols, remaining_images)
+        total_block_height = rows * thumb_h
+        y_offset = (a4_height - total_block_height) // 2
 
-            # 가로 중앙 정렬을 위한 x offset 계산
+        for idx in range(total_images):
+            img = page_images[idx]
+            row = idx // cols
+            col = idx % cols
+
+            # 해당 행에 포함될 이미지 수
+            current_row_start = row * cols
+            row_images = min(cols, total_images - current_row_start)
             total_row_width = row_images * thumb_w
             x_offset = (a4_width - total_row_width) // 2
+
             x = x_offset + col * thumb_w
-            y = row * thumb_h
+            y = y_offset + row * thumb_h
 
             canvas[y:y+thumb_h, x:x+thumb_w] = img
             cv2.rectangle(canvas, (x, y), (x + thumb_w - 1, y + thumb_h - 1), (0, 0, 0), 2)
+
         pages.append(canvas)
     return pages
 
