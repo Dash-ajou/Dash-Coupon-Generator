@@ -57,7 +57,7 @@ def process_coupon(template_img, coupon, partner_name):
     if rc_box:
         x, y, w, h = rc_box
         cv2.rectangle(img, (x, y), (x+w, y+h), (255, 255, 255), -1)
-        img = draw_text_with_font(img, coupon.registration_code, (x, y), font_size=16)
+        img = draw_text_with_font(img, coupon.registration_code, (x, y), font_size=24)
 
     red_box = detect_red_rectangle(img)
     if red_box:
